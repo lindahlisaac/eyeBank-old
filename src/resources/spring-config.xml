@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:int="http://www.springframework.org/schema/integration"
+  xmlns:int-webflux="http://www.springframework.org/schema/integration/webflux"
+  xmlns:int-stream="http://www.springframework.org/schema/integration/stream"
+  xmlns:int-file="http://www.springframework.org/schema/integration/file"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+   http://www.springframework.org/schema/beans/spring-beans.xsd
+   http://www.springframework.org/schema/integration
+   http://www.springframework.org/schema/integration/spring-integration.xsd
+   http://www.springframework.org/schema/integration/webflux
+   http://www.springframework.org/schema/integration/webflux/spring-integration-webflux.xsd
+   http://www.springframework.org/schema/integration/stream
+   http://www.springframework.org/schema/integration/stream/spring-integration-stream.xsd
+   http://www.springframework.org/schema/integration/file 
+   http://www.springframework.org/schema/integration/file/spring-integration-file.xsd">
+   
+   
+   <int:publish-subscribe-channel id="inboundFileChannel" />
+    <int-file:inbound-channel-adapter 
+    	id="filesInAdapter"
+	    directory="file:${C:/eyeBank/inbound}"
+	    filename-pattern="*.csv"
+	    channel="inboundFileChannel"
+	    prevent-duplicates="false">
+	    <int:poller id="filePoller" fixed-rate="1000"/>
+	</int-file:inbound-channel-adapter>
+	
+	<int:channel id="sendToSplitter" />
+	<int-file:file-to-string-transformer
+		input-channel="inboundFileChannel" output-channel="splitterChannel">
+	</int-file:file-to-string-transformer>
+	
+	<int:channel id="splitterChannel" />
+	<int:service-activator
+		input-channel="splitterChannel"
+		output-channel="nullChannel"
+		ref="sendToSplitterBean"
+		method="split">
+	</int:service-activator>
+	<bean id="sendToSplitterBean" class="service.LineSplitter"/>
+	
+<!-- 	
+<int:outbound-channel-adpater
+>		
+</int:outbound-channel-adpater> -->
+	
+	
+	
+<!-- 	<int:channel id="splitterChannel" />
+	<int:splitter
+		id="lineSplitter"
+		input-channel="splitterChannel"
+		output-channel="lineRequestChannel">
+	</int:splitter> -->
+
+<!-- 	<int:channel id="lineRequestChannel">
+		<int:queue/>
+	</int:channel>
+	
+	<int:gateway
+		id="gateway"
+		service-interface="transaction.LineGateway"
+		default-request-channel="lineRequestChannel">
+	</int:gateway>
+	
+	
+	
+	<int:aggregator	
+		id="lineAggregator"
+		input-channel="lineRequestChannel"
+		output-channel="aggregatorOutputChannel"
+		ref="model"
+		method="newLine"
+		release-strategy="releaseBean"
+		release-strategy-method="canRelease">
+	</int:aggregator>
+	<bean id="releaseBean" class="transaction.ReleaseStrategy" />
+	
+	<int:channel id="aggregatorOutputChannel"/>
+		
+	<bean id="model" class="model.Model" /> -->
+	
+	</beans>
